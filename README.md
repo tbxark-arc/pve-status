@@ -18,6 +18,7 @@ The bot requires a configuration file in JSON format. The configuration file sho
 ## Docker
 
 ```bash
+docker build -t ghcr.io/tbxark-arc/pve-status .
 docker run -d \
   --name pve-status-telegram-bot \
   -v /sys/class/thermal:/sys/class/thermal \
