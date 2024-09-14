@@ -1,5 +1,10 @@
+FROM golang:1.23 AS builder
+WORKDIR /app
+COPY . .
+RUN go mod download
+RUN make build
+
 FROM alpine:latest
-COPY /build/pve-status /main
-RUN apk add --no-cache lm-sensors
+COPY --from=builder /app/build/pve-status /main
 ENTRYPOINT ["/main"]
 CMD ["--config", "/config/config.json"]

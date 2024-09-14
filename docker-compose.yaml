@@ -1,0 +1,9 @@
+services:
+  app:
+    image: ghcr.io/tbxark-arc/pve-status:latest
+    pull_policy: always
+    volumes:
+      - /sys/class/thermal:/sys/class/thermal
+      - ./config.json:/config.json
+    restart: always
+    command: ["--config", "/config.json"]

@@ -21,6 +21,5 @@ buildLinuxX86:
 	GOOS=linux GOARCH=amd64 $(GO_BUILD) -o ./build/ ./...
 
 .PHONY: buildImage
-buildImage: buildLinuxX86
-	docker buildx build --platform=linux/amd64 -t ghcr.io/tbxark-arc/pve-status:latest .
-	docker push ghcr.io/tbxark-arc/pve-status:latest
+buildImage: 
+	docker buildx build --platform=linux/amd64,linux/arm64 -t ghcr.io/tbxark-arc/pve-status:latest . --push
