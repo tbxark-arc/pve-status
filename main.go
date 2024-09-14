@@ -14,6 +14,8 @@ import (
 	"time"
 )
 
+var BuildVersion = "dev"
+
 const (
 	highTempThreshold = 50.0
 	sleepDuration     = 10 * time.Minute
@@ -167,9 +169,17 @@ type Config struct {
 }
 
 func main() {
-	f := flag.String("config", "config.json", "config file path")
+	conf := flag.String("config", "config.json", "config file path")
+	help := flag.Bool("help", false, "show help")
 	flag.Parse()
-	conf, err := loadConfig(*f)
+
+	if *help {
+		fmt.Printf("Version: %s\n", BuildVersion)
+		flag.Usage()
+		return
+	}
+
+	config, err := loadConfig(*conf)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -179,7 +189,7 @@ func main() {
 			log.Printf("Error rendering message: %v", e)
 			continue
 		}
-		if se := sendPVEStatusToTelegram(text, temp, conf); se != nil {
+		if se := sendPVEStatusToTelegram(text, temp, config); se != nil {
 			log.Printf("Error sending message to Telegram: %v", se)
 		}
 		time.Sleep(sleepDuration)
