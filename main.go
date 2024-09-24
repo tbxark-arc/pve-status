@@ -31,12 +31,12 @@ func parseJsonNumber(n json.Number) (float64, error) {
 func renderMessage() (string, float64, error) {
 	output, err := exec.Command("sensors", "-j").Output()
 	if err != nil {
-		return "", 0, fmt.Errorf("failed to run sensors: %w", err)
+		return "", 0, err
 	}
 
 	var sensorData map[string]interface{}
-	if err := json.Unmarshal(output, &sensorData); err != nil {
-		return "", 0, fmt.Errorf("failed to parse output: %w", err)
+	if e := json.Unmarshal(output, &sensorData); e != nil {
+		return "", 0, e
 	}
 
 	cpuData, ok := sensorData["coretemp-isa-0000"].(map[string]interface{})
@@ -51,7 +51,7 @@ func renderMessage() (string, float64, error) {
 
 	mainTemp, err := parseJsonNumber(json.Number(fmt.Sprintf("%v", packageData["temp1_input"])))
 	if err != nil {
-		return "", 0, fmt.Errorf("failed to parse main temperature: %w", err)
+		return "", 0, err
 	}
 
 	warning := ""
@@ -64,14 +64,14 @@ func renderMessage() (string, float64, error) {
 
 	for key, value := range cpuData {
 		if strings.HasPrefix(key, "Core") {
-			coreData, ok := value.(map[string]interface{})
-			if !ok {
+			coreData, exist := value.(map[string]interface{})
+			if !exist {
 				continue
 			}
 			for k, v := range coreData {
 				if strings.HasSuffix(k, "_input") {
-					coreTemp, err := parseJsonNumber(json.Number(fmt.Sprintf("%v", v)))
-					if err == nil {
+					coreTemp, e := parseJsonNumber(json.Number(fmt.Sprintf("%v", v)))
+					if e == nil {
 						coreTemps = append(coreTemps, fmt.Sprintf("%.1f", coreTemp))
 					}
 					break
@@ -82,9 +82,9 @@ func renderMessage() (string, float64, error) {
 
 	text := fmt.Sprintf("%s\nCPU: %s°C\n", warning, strings.Join(coreTemps, "°C | "))
 
-	if acpiData, ok := sensorData["acpitz-acpi-0"].(map[string]interface{}); ok {
-		if temp1, ok := acpiData["temp1"].(map[string]interface{}); ok {
-			if acpiTemp, ok := temp1["temp1_input"]; ok {
+	if acpiData, exist := sensorData["acpitz-acpi-0"].(map[string]interface{}); exist {
+		if temp1, tExist := acpiData["temp1"].(map[string]interface{}); tExist {
+			if acpiTemp, aExist := temp1["temp1_input"]; aExist {
 				acpiTempFloat, _ := parseJsonNumber(json.Number(fmt.Sprintf("%v", acpiTemp)))
 				text += fmt.Sprintf("\nACPI: %.1f°C", acpiTempFloat)
 			}
@@ -93,9 +93,9 @@ func renderMessage() (string, float64, error) {
 
 	text += "\n"
 
-	if nvmeData, ok := sensorData["nvme-pci-0400"].(map[string]interface{}); ok {
-		if composite, ok := nvmeData["Composite"].(map[string]interface{}); ok {
-			if nvmeTemp, ok := composite["temp1_input"]; ok {
+	if nvmeData, exist := sensorData["nvme-pci-0400"].(map[string]interface{}); exist {
+		if composite, cExist := nvmeData["Composite"].(map[string]interface{}); cExist {
+			if nvmeTemp, nExist := composite["temp1_input"]; nExist {
 				nvmeTempFloat, _ := parseJsonNumber(json.Number(fmt.Sprintf("%v", nvmeTemp)))
 				text += fmt.Sprintf("\nNVME: %.1f°C", nvmeTempFloat)
 			}
@@ -126,7 +126,7 @@ func sendPVEStatusToTelegram(text string, temp float64, conf *Config) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	_ = resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("request failed with status code: %s", resp.Status)
