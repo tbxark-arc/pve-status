@@ -113,18 +113,18 @@ func sendPVEStatusToTelegram(text string, temp float64, conf *Config) error {
 	}
 	jsonData, err := json.Marshal(data)
 	if err != nil {
-		return fmt.Errorf("failed to serialize JSON data: %w", err)
+		return err
 	}
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("https://api.telegram.org/bot%s/sendMessage", conf.Token), bytes.NewBuffer(jsonData))
 	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
+		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
+		return err
 	}
 	defer resp.Body.Close()
 
@@ -132,8 +132,68 @@ func sendPVEStatusToTelegram(text string, temp float64, conf *Config) error {
 		return fmt.Errorf("request failed with status code: %s", resp.Status)
 	}
 
+	var respData struct {
+		Result struct {
+			MessageId int64 `json:"message_id"`
+		}
+	}
+	err = json.NewDecoder(resp.Body).Decode(&respData)
+	if err != nil {
+		return err
+	}
+
+	err = pinMessageToTelegram(conf, respData.Result.MessageId)
+	if err != nil {
+		return err
+	}
+
 	log.Println("sendPVEStatusToTelegram: true")
 	return nil
+}
+
+func pinMessageToTelegram(conf *Config, messageId int64) error {
+	// unpin all messages
+	data := map[string]interface{}{
+		"chat_id": conf.TargetId,
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	req, err := http.NewRequest("POST", fmt.Sprintf("https://api.telegram.org/bot%s/unpinAllChatMessages", conf.Token), bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	err = resp.Body.Close()
+	if err != nil {
+		return err
+	}
+
+	// pin the message
+	data = map[string]interface{}{
+		"chat_id":              conf.TargetId,
+		"message_id":           messageId,
+		"disable_notification": true,
+	}
+	jsonData, err = json.Marshal(data)
+	if err != nil {
+		return err
+	}
+	req, err = http.NewRequest("POST", fmt.Sprintf("https://api.telegram.org/bot%s/pinChatMessage", conf.Token), bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		return err
+	}
+	return resp.Body.Close()
 }
 
 func loadConfig(path string) (*Config, error) {
@@ -150,12 +210,12 @@ func loadConfig(path string) (*Config, error) {
 		}
 		return config, nil
 	} else {
-		bytes, err := os.ReadFile(path)
+		file, err := os.ReadFile(path)
 		if err != nil {
 			log.Fatal(err)
 		}
 		config := &Config{}
-		err = json.Unmarshal(bytes, config)
+		err = json.Unmarshal(file, config)
 		if err != nil {
 			return nil, err
 		}
