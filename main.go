@@ -132,6 +132,10 @@ func sendPVEStatusToTelegram(text string, temp float64, conf *Config) error {
 		return fmt.Errorf("request failed with status code: %s", resp.Status)
 	}
 
+	if !conf.PinLatest {
+		return nil
+	}
+
 	var respData struct {
 		Result struct {
 			MessageId int64 `json:"message_id"`
@@ -191,7 +195,7 @@ func pinMessageToTelegram(conf *Config, messageId int64) error {
 		return err
 	}
 	defer resp.Body.Close()
-	
+
 	return nil
 }
 
@@ -223,8 +227,9 @@ func loadConfig(path string) (*Config, error) {
 }
 
 type Config struct {
-	Token    string `json:"token"`
-	TargetId int64  `json:"target_id"`
+	Token     string `json:"token"`
+	TargetId  int64  `json:"target_id"`
+	PinLatest bool   `json:"pin_latest"`
 }
 
 func main() {
