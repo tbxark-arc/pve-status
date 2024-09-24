@@ -132,6 +132,8 @@ func sendPVEStatusToTelegram(text string, temp float64, conf *Config) error {
 		return fmt.Errorf("request failed with status code: %s", resp.Status)
 	}
 
+	defer log.Printf("%.1f°C", temp)
+
 	if !conf.PinLatest {
 		return nil
 	}
@@ -151,7 +153,6 @@ func sendPVEStatusToTelegram(text string, temp float64, conf *Config) error {
 		return err
 	}
 
-	log.Printf("%.1f°C", temp)
 	return nil
 }
 
