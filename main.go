@@ -147,7 +147,7 @@ func sendPVEStatusToTelegram(text string, temp float64, conf *Config) error {
 		return err
 	}
 
-	log.Println("sendPVEStatusToTelegram: true")
+	log.Printf("%.1f°C", temp)
 	return nil
 }
 
