@@ -126,7 +126,7 @@ func sendPVEStatusToTelegram(text string, temp float64, conf *Config) error {
 	if err != nil {
 		return err
 	}
-	_ = resp.Body.Close()
+	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf("request failed with status code: %s", resp.Status)
@@ -169,10 +169,7 @@ func pinMessageToTelegram(conf *Config, messageId int64) error {
 	if err != nil {
 		return err
 	}
-	err = resp.Body.Close()
-	if err != nil {
-		return err
-	}
+	defer resp.Body.Close()
 
 	// pin the message
 	data = map[string]interface{}{
@@ -193,7 +190,9 @@ func pinMessageToTelegram(conf *Config, messageId int64) error {
 	if err != nil {
 		return err
 	}
-	return resp.Body.Close()
+	defer resp.Body.Close()
+	
+	return nil
 }
 
 func loadConfig(path string) (*Config, error) {
