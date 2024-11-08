@@ -50,17 +50,16 @@ func RenderLogMessage(s *SensorsTemperature) string {
 }
 
 func RenderTableMessage(s *SensorsTemperature) string {
-	var text strings.Builder
+	table := simpletable.New()
+	table.SetStyle(simpletable.StyleCompactLite)
+	table.Header = &simpletable.Header{
+		Cells: []*simpletable.Cell{
+			{Text: "Adapter"},
+			{Text: "Input"},
+			{Text: "Temp"},
+		},
+	}
 	for _, module := range s.Modules {
-		table := simpletable.New()
-		table.SetStyle(simpletable.StyleCompactLite)
-		table.Header = &simpletable.Header{
-			Cells: []*simpletable.Cell{
-				{Text: "Adapter"},
-				{Text: "Input"},
-				{Text: "Temp"},
-			},
-		}
 		for _, data := range module.Data {
 			row := []*simpletable.Cell{
 				{Text: module.Name},
@@ -69,11 +68,8 @@ func RenderTableMessage(s *SensorsTemperature) string {
 			}
 			table.Body.Cells = append(table.Body.Cells, row)
 		}
-		text.WriteString("\n")
-		text.WriteString(table.String())
-		text.WriteString("\n\n")
 	}
-	return text.String()
+	return table.String()
 }
 
 func (s *SensorsTemperature) IsHigherThanThreshold(threshold float64) bool {
