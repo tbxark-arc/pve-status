@@ -19,7 +19,22 @@ type Application struct {
 }
 
 func NewApplication(conf *Config) (*Application, error) {
-	b, err := bot.New(conf.Token, bot.WithSkipGetMe())
+	permission := func(next bot.HandlerFunc) bot.HandlerFunc {
+		return func(ctx context.Context, bot *bot.Bot, update *models.Update) {
+			if update.Message != nil && conf.TargetId != update.Message.Chat.ID {
+				return
+			}
+			if update.CallbackQuery != nil && conf.TargetId != update.CallbackQuery.From.ID {
+				return
+			}
+			next(ctx, bot, update)
+		}
+	}
+	b, err := bot.New(
+		conf.Token,
+		bot.WithSkipGetMe(),
+		bot.WithMiddlewares(permission),
+	)
 	if err != nil {
 		return nil, err
 	}

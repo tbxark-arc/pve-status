@@ -4,9 +4,7 @@ This bot sends status updates from a Proxmox Virtual Environment (PVE) server to
 
 ## Features
 
-- **Status Updates**: Monitors the status of the PVE server and sends updates to the Telegram channel.
 - **Temperature Monitoring**: Monitors the temperature of the CPU and sends alerts if the temperature is too high.
-- **CPU Usage**: Monitors the CPU usage and sends alerts if the CPU usage is too high.
 
 ## Configuration
 
