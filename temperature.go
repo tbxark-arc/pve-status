@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/alexeyco/simpletable"
 	"github.com/tidwall/gjson"
 	"os/exec"
 	"strings"
@@ -41,14 +42,11 @@ func LoadSensorsTemperature() (*SensorsTemperature, error) {
 	return &temp, nil
 }
 
-func (s *SensorsTemperature) RenderMessage() string {
-	var text strings.Builder
-	for i, module := range s.Modules {
-		if i > 0 {
-			text.WriteString("\n\n")
-		}
-		text.WriteString(strings.ToUpper(strings.Split(module.Name, "-")[0]))
-		text.WriteString(":")
+func RenderPlainMessage(s *SensorsTemperature) string {
+	table := simpletable.New()
+	table.SetStyle(simpletable.StyleCompactClassic)
+	for _, module := range s.Modules {
+		var text strings.Builder
 		for j, data := range module.Data {
 			if j > 0 {
 				text.WriteString(" | ")
@@ -59,6 +57,40 @@ func (s *SensorsTemperature) RenderMessage() string {
 				text.WriteString("N/A")
 			}
 		}
+		table.Body.Cells = append(table.Body.Cells, []*simpletable.Cell{
+			{Text: strings.ToUpper(strings.Split(module.Name, "-")[0])},
+			{Text: text.String()},
+		})
+	}
+	return table.String()
+}
+
+func RenderTableMessage(s *SensorsTemperature) string {
+	var text strings.Builder
+	for _, module := range s.Modules {
+		text.WriteString(strings.ToUpper(strings.Split(module.Name, "-")[0]))
+		table := simpletable.New()
+		table.SetStyle(simpletable.StyleCompactLite)
+		table.Header = &simpletable.Header{
+			Cells: []*simpletable.Cell{
+				{Align: simpletable.AlignCenter, Text: "Sensor"},
+				{Align: simpletable.AlignCenter, Text: "Temp"},
+				{Align: simpletable.AlignCenter, Text: "Max"},
+				{Align: simpletable.AlignCenter, Text: "Min"},
+			},
+		}
+		for _, data := range module.Data {
+			row := []*simpletable.Cell{
+				{Text: data.Name},
+				{Text: data.Input.String()},
+				{Text: data.Max.String()},
+				{Text: data.Min.String()},
+			}
+			table.Body.Cells = append(table.Body.Cells, row)
+		}
+		text.WriteString("\n")
+		text.WriteString(table.String())
+		text.WriteString("\n\n")
 	}
 	return text.String()
 }

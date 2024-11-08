@@ -29,7 +29,7 @@ func NewApplication(conf *Config) (*Application, error) {
 	}, nil
 }
 
-func (a *Application) sendTemperatureToTelegram(ctx context.Context) {
+func (a *Application) sendTemperatureToTelegram(ctx context.Context, render func(*SensorsTemperature) string) {
 	temp, err := LoadSensorsTemperature()
 	if err != nil {
 		log.Printf("error getting system temp: %v", err)
@@ -37,7 +37,7 @@ func (a *Application) sendTemperatureToTelegram(ctx context.Context) {
 	}
 	_, err = a.bot.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:              a.conf.TargetId,
-		Text:                temp.RenderMessage(),
+		Text:                render(temp),
 		DisableNotification: temp.IsHigherThanThreshold(highTempThreshold),
 	})
 	if err != nil {
@@ -47,14 +47,22 @@ func (a *Application) sendTemperatureToTelegram(ctx context.Context) {
 
 func (a *Application) startMonitoring(ctx context.Context) {
 	for {
-		a.sendTemperatureToTelegram(ctx)
+		a.sendTemperatureToTelegram(ctx, RenderPlainMessage)
 		time.Sleep(sleepDuration)
 	}
 }
 
 func (a *Application) startPolling(ctx context.Context) {
 	a.bot.RegisterHandler(bot.HandlerTypeMessageText, "/temp", bot.MatchTypePrefix, func(ctx context.Context, bot *bot.Bot, update *models.Update) {
-		a.sendTemperatureToTelegram(ctx)
+		a.sendTemperatureToTelegram(ctx, RenderTableMessage)
+	})
+	_, _ = a.bot.SetMyCommands(ctx, &bot.SetMyCommandsParams{
+		Commands: []models.BotCommand{
+			{
+				Command:     "/temp",
+				Description: "/temp - get system temperature",
+			},
+		},
 	})
 	a.bot.Start(ctx)
 }
