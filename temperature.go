@@ -76,7 +76,7 @@ func RenderTableMessage(s *SensorsTemperature) string {
 		},
 	}
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("%s: Temperature: <strong>%.2f°C</strong>\n\n", time.Now().Format(time.DateTime), s.HighestTemperature()))
+	sb.WriteString(fmt.Sprintf("%s: Temperature: <strong>%s</strong>\n\n", time.Now().Format(time.DateTime), s.HighestTemperature()))
 	for _, module := range s.Modules {
 		for _, data := range module.Data {
 			temp, err := data.Input.Float64()
@@ -99,17 +99,20 @@ func RenderTableMessage(s *SensorsTemperature) string {
 }
 
 func (s *SensorsTemperature) HighestTemperature() string {
-	var maxTemp float64
+	var maxTemp float64 = -1000
 	for _, module := range s.Modules {
 		for _, data := range module.Data {
 			t, err := data.Input.Float64()
 			if err != nil {
-				return "N/A"
+				continue
 			}
 			if t > maxTemp {
 				maxTemp = t
 			}
 		}
+	}
+	if maxTemp < -999 {
+		return "N/A"
 	}
 	return fmt.Sprintf("%.2f°C", maxTemp)
 }
