@@ -45,9 +45,9 @@ func (s *SensorsTemperature) RenderMessage() string {
 	var text strings.Builder
 	for i, module := range s.Modules {
 		if i > 0 {
-			text.WriteString("\n")
+			text.WriteString("\n\n")
 		}
-		text.WriteString(strings.ToUpper(strings.Split(module.Name, " ")[0]))
+		text.WriteString(strings.ToUpper(strings.Split(module.Name, "-")[0]))
 		text.WriteString(":")
 		for j, data := range module.Data {
 			if j > 0 {

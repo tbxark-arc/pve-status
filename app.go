@@ -29,13 +29,6 @@ func NewApplication(conf *Config) (*Application, error) {
 	}, nil
 }
 
-func (a *Application) startMonitoring(ctx context.Context) {
-	for {
-		a.sendTemperatureToTelegram(ctx)
-		time.Sleep(sleepDuration)
-	}
-}
-
 func (a *Application) sendTemperatureToTelegram(ctx context.Context) {
 	temp, err := LoadSensorsTemperature()
 	if err != nil {
@@ -49,6 +42,13 @@ func (a *Application) sendTemperatureToTelegram(ctx context.Context) {
 	})
 	if err != nil {
 		log.Printf("error sending message: %v", err)
+	}
+}
+
+func (a *Application) startMonitoring(ctx context.Context) {
+	for {
+		a.sendTemperatureToTelegram(ctx)
+		time.Sleep(sleepDuration)
 	}
 }
 
