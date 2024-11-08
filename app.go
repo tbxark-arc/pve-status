@@ -48,7 +48,7 @@ func (a *Application) sendTemperatureToTelegram(ctx context.Context, render func
 
 func (a *Application) startMonitoring(ctx context.Context) {
 	for {
-		a.sendTemperatureToTelegram(ctx, RenderPlainMessage)
+		a.sendTemperatureToTelegram(ctx, RenderTableMessage)
 		time.Sleep(sleepDuration)
 	}
 }
