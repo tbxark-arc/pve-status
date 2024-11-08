@@ -62,12 +62,7 @@ func MockLoadSensorsTemperature(path string) TemperatureLoader {
 }
 
 func RenderLogMessage(s *SensorsTemperature) string {
-	if len(s.Modules) > 0 && len(s.Modules[0].Data) > 0 {
-		if f, err := s.Modules[0].Data[0].Input.Float64(); err == nil {
-			return fmt.Sprintf("Temperature: %.2f°C", f)
-		}
-	}
-	return "Temperature: N/A"
+	return fmt.Sprintf("Temperature: %s", s.HighestTemperature())
 }
 
 func RenderTableMessage(s *SensorsTemperature) string {
@@ -81,16 +76,14 @@ func RenderTableMessage(s *SensorsTemperature) string {
 		},
 	}
 	var sb strings.Builder
-	for i, module := range s.Modules {
-		for j, data := range module.Data {
+	sb.WriteString(fmt.Sprintf("%s: Temperature: <strong>%.2f°C</strong>\n\n", time.Now().Format(time.DateTime), s.HighestTemperature()))
+	for _, module := range s.Modules {
+		for _, data := range module.Data {
 			temp, err := data.Input.Float64()
 			if err != nil {
 				continue
 			}
 			tempStr := fmt.Sprintf("%.2f°C", temp)
-			if i == 0 && j == 0 {
-				sb.WriteString(fmt.Sprintf("%s: Temperature: <strong>%s</strong>\n\n", time.Now().Format(time.DateTime), tempStr))
-			}
 			row := []*simpletable.Cell{
 				{Text: module.Name},
 				{Text: data.Name},
@@ -103,6 +96,22 @@ func RenderTableMessage(s *SensorsTemperature) string {
 	sb.WriteString(table.String())
 	sb.WriteString("</pre>")
 	return sb.String()
+}
+
+func (s *SensorsTemperature) HighestTemperature() string {
+	var maxTemp float64
+	for _, module := range s.Modules {
+		for _, data := range module.Data {
+			t, err := data.Input.Float64()
+			if err != nil {
+				return "N/A"
+			}
+			if t > maxTemp {
+				maxTemp = t
+			}
+		}
+	}
+	return fmt.Sprintf("%.2f°C", maxTemp)
 }
 
 func (s *SensorsTemperature) IsHigherThanThreshold(threshold float64) bool {

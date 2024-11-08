@@ -29,3 +29,4 @@ go.work
 .idea
 build
 config.json
+mock_data.json
