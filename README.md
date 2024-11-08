@@ -1,5 +1,7 @@
 # PVE Status Telegram Bot
 
+![](preview.jpg)
+
 This bot sends status updates from a Proxmox Virtual Environment (PVE) server to a Telegram channel.
 
 ## Features

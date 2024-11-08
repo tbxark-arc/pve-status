@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"github.com/alexeyco/simpletable"
 	"github.com/tidwall/gjson"
+	"os"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 type TemperatureData struct {
@@ -29,6 +31,8 @@ type SensorsTemperature struct {
 	Modules []Module `json:"-"`
 }
 
+type TemperatureLoader func() (*SensorsTemperature, error)
+
 func LoadSensorsTemperature() (*SensorsTemperature, error) {
 	output, err := exec.Command("sensors", "-j").Output()
 	if err != nil {
@@ -42,9 +46,26 @@ func LoadSensorsTemperature() (*SensorsTemperature, error) {
 	return &temp, nil
 }
 
+func MockLoadSensorsTemperature(path string) TemperatureLoader {
+	return func() (*SensorsTemperature, error) {
+		file, err := os.ReadFile(path)
+		if err != nil {
+			return nil, err
+		}
+		var temp SensorsTemperature
+		err = json.Unmarshal(file, &temp)
+		if err != nil {
+			return nil, err
+		}
+		return &temp, nil
+	}
+}
+
 func RenderLogMessage(s *SensorsTemperature) string {
 	if len(s.Modules) > 0 && len(s.Modules[0].Data) > 0 {
-		return fmt.Sprintf("Temperature: %s", s.Modules[0].Data[0].Input)
+		if f, err := s.Modules[0].Data[0].Input.Float64(); err == nil {
+			return fmt.Sprintf("Temperature: %.2f°C", f)
+		}
 	}
 	return "Temperature: N/A"
 }
@@ -54,22 +75,34 @@ func RenderTableMessage(s *SensorsTemperature) string {
 	table.SetStyle(simpletable.StyleCompactLite)
 	table.Header = &simpletable.Header{
 		Cells: []*simpletable.Cell{
-			{Text: "Adapter"},
-			{Text: "Input"},
+			{Text: "Type"},
+			{Text: "Index"},
 			{Text: "Temp"},
 		},
 	}
-	for _, module := range s.Modules {
-		for _, data := range module.Data {
+	var sb strings.Builder
+	for i, module := range s.Modules {
+		for j, data := range module.Data {
+			temp, err := data.Input.Float64()
+			if err != nil {
+				continue
+			}
+			tempStr := fmt.Sprintf("%.2f°C", temp)
+			if i == 0 && j == 0 {
+				sb.WriteString(fmt.Sprintf("%s: Temperature: <strong>%s</strong>\n\n", time.Now().Format(time.DateTime), tempStr))
+			}
 			row := []*simpletable.Cell{
 				{Text: module.Name},
 				{Text: data.Name},
-				{Text: data.Input.String()},
+				{Text: tempStr},
 			}
 			table.Body.Cells = append(table.Body.Cells, row)
 		}
 	}
-	return table.String()
+	sb.WriteString("<pre>")
+	sb.WriteString(table.String())
+	sb.WriteString("</pre>")
+	return sb.String()
 }
 
 func (s *SensorsTemperature) IsHigherThanThreshold(threshold float64) bool {

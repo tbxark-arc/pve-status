@@ -14,8 +14,9 @@ const (
 )
 
 type Application struct {
-	conf *Config
-	bot  *bot.Bot
+	conf       *Config
+	bot        *bot.Bot
+	tempLoader TemperatureLoader
 }
 
 func NewApplication(conf *Config) (*Application, error) {
@@ -39,13 +40,14 @@ func NewApplication(conf *Config) (*Application, error) {
 		return nil, err
 	}
 	return &Application{
-		conf: conf,
-		bot:  b,
+		conf:       conf,
+		bot:        b,
+		tempLoader: LoadSensorsTemperature,
 	}, nil
 }
 
 func (a *Application) sendTemperatureToTelegram(ctx context.Context, render func(*SensorsTemperature) string) {
-	temp, err := LoadSensorsTemperature()
+	temp, err := a.tempLoader()
 	if err != nil {
 		log.Printf("error getting system temp: %v", err)
 		return
@@ -54,6 +56,7 @@ func (a *Application) sendTemperatureToTelegram(ctx context.Context, render func
 	_, err = a.bot.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:              a.conf.TargetId,
 		Text:                render(temp),
+		ParseMode:           models.ParseModeHTML,
 		DisableNotification: temp.IsHigherThanThreshold(highTempThreshold),
 	})
 	if err != nil {

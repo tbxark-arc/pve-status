@@ -27,6 +27,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	//app.tempLoader = MockLoadSensorsTemperature("mock_data.json")
 	go app.startPolling(context.Background())
 	app.startMonitoring(context.Background())
 }
