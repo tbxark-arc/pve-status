@@ -35,6 +35,7 @@ func (a *Application) sendTemperatureToTelegram(ctx context.Context, render func
 		log.Printf("error getting system temp: %v", err)
 		return
 	}
+	log.Println(RenderLogMessage(temp))
 	_, err = a.bot.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:              a.conf.TargetId,
 		Text:                render(temp),
@@ -59,7 +60,7 @@ func (a *Application) startPolling(ctx context.Context) {
 	_, _ = a.bot.SetMyCommands(ctx, &bot.SetMyCommandsParams{
 		Commands: []models.BotCommand{
 			{
-				Command:     "/temp",
+				Command:     "temp",
 				Description: "/temp - get system temperature",
 			},
 		},

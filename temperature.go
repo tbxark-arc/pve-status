@@ -42,6 +42,13 @@ func LoadSensorsTemperature() (*SensorsTemperature, error) {
 	return &temp, nil
 }
 
+func RenderLogMessage(s *SensorsTemperature) string {
+	if len(s.Modules) > 0 && len(s.Modules[0].Data) > 0 {
+		return fmt.Sprintf("Temperature: %s", s.Modules[0].Data[0].Input)
+	}
+	return "Temperature: N/A"
+}
+
 func RenderPlainMessage(s *SensorsTemperature) string {
 	table := simpletable.New()
 	table.SetStyle(simpletable.StyleCompactClassic)
@@ -68,15 +75,14 @@ func RenderPlainMessage(s *SensorsTemperature) string {
 func RenderTableMessage(s *SensorsTemperature) string {
 	var text strings.Builder
 	for _, module := range s.Modules {
-		text.WriteString(strings.ToUpper(strings.Split(module.Name, "-")[0]))
 		table := simpletable.New()
 		table.SetStyle(simpletable.StyleCompactLite)
 		table.Header = &simpletable.Header{
 			Cells: []*simpletable.Cell{
-				{Align: simpletable.AlignCenter, Text: "Sensor"},
-				{Align: simpletable.AlignCenter, Text: "Temp"},
-				{Align: simpletable.AlignCenter, Text: "Max"},
-				{Align: simpletable.AlignCenter, Text: "Min"},
+				{Text: strings.ToUpper(strings.Split(module.Name, "-")[0])},
+				{Text: "Temp"},
+				{Text: "Max"},
+				{Text: "Min"},
 			},
 		}
 		for _, data := range module.Data {
