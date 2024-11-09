@@ -5,6 +5,7 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -16,6 +17,7 @@ const (
 type Application struct {
 	conf       *Config
 	bot        *bot.Bot
+	bootTime   time.Time
 	tempLoader TemperatureLoader
 }
 
@@ -42,6 +44,7 @@ func NewApplication(conf *Config) (*Application, error) {
 	return &Application{
 		conf:       conf,
 		bot:        b,
+		bootTime:   time.Now(),
 		tempLoader: LoadSensorsTemperature,
 	}, nil
 }
@@ -53,9 +56,16 @@ func (a *Application) sendTemperatureToTelegram(ctx context.Context, render func
 		return
 	}
 	log.Println(RenderLogMessage(temp))
+	var sb strings.Builder
+	sb.WriteString(render(temp))
+	sb.WriteString("\n\n")
+	sb.WriteString("Uptime: ")
+	sb.WriteString(time.Since(a.bootTime).String())
+	sb.WriteString(" ; Boot time: ")
+	sb.WriteString(a.bootTime.Format(time.DateTime))
 	_, err = a.bot.SendMessage(ctx, &bot.SendMessageParams{
 		ChatID:              a.conf.TargetId,
-		Text:                render(temp),
+		Text:                sb.String(),
 		ParseMode:           models.ParseModeHTML,
 		DisableNotification: temp.IsHigherThanThreshold(highTempThreshold),
 	})
