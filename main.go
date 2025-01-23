@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
+
+	"github.com/TBXark/confstore"
 )
 
 var BuildVersion = "dev"
@@ -19,7 +21,7 @@ func main() {
 		flag.Usage()
 		return
 	}
-	conf, err := loadConfig(*config)
+	conf, err := confstore.Load[Config](*config)
 	if err != nil {
 		log.Fatal(err)
 	}
