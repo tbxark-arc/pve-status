@@ -6,13 +6,17 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/TBXark/confstore"
+	"github.com/go-sphere/confstore"
+	"github.com/go-sphere/confstore/codec"
+	"github.com/go-sphere/confstore/provider"
+	"github.com/go-sphere/confstore/provider/file"
+	"github.com/go-sphere/confstore/provider/http"
 )
 
 var BuildVersion = "dev"
 
 func main() {
-	config := flag.String("config", "config.json", "config file path")
+	conf := flag.String("config", "config.json", "config file path")
 	help := flag.Bool("help", false, "show help")
 	flag.Parse()
 
@@ -21,11 +25,18 @@ func main() {
 		flag.Usage()
 		return
 	}
-	conf, err := confstore.Load[Config](*config)
+	config, err := confstore.Load[Config](provider.NewSelect(*conf,
+		provider.If(file.IsLocalPath, func(s string) provider.Provider {
+			return file.New(s)
+		}),
+		provider.If(http.IsRemoteURL, func(s string) provider.Provider {
+			return http.New(s, http.WithTimeout(10))
+		}),
+	), codec.JsonCodec())
 	if err != nil {
 		log.Fatal(err)
 	}
-	app, err := NewApplication(conf)
+	app, err := NewApplication(config)
 	if err != nil {
 		log.Fatal(err)
 	}

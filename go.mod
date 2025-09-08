@@ -3,8 +3,8 @@ module pve-status
 go 1.23.2
 
 require (
-	github.com/TBXark/confstore v0.0.0-20250123065822-f224518502e3
 	github.com/alexeyco/simpletable v1.0.0
+	github.com/go-sphere/confstore v0.0.4
 	github.com/go-telegram/bot v1.10.1
 	github.com/tidwall/gjson v1.18.0
 )
