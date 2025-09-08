@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/go-sphere/confstore"
 	"github.com/go-sphere/confstore/codec"
@@ -30,7 +31,7 @@ func main() {
 			return file.New(s)
 		}),
 		provider.If(http.IsRemoteURL, func(s string) provider.Provider {
-			return http.New(s, http.WithTimeout(10))
+			return http.New(s, http.WithTimeout(10*time.Second))
 		}),
 	), codec.JsonCodec())
 	if err != nil {
